@@ -1,79 +1,52 @@
 package com.tracker.expense_tracker.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(name = "budget")
+@Table(name = "budgets", indexes = {
+    @Index(name = "idx_budget_user_month_year", columnList = "user_id, month, year", unique = true)
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Budget {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	@ManyToOne
-	@JoinColumn(name = "user_id" , nullable = false)
-	private User user;
-	
-	@Column(nullable = false)
-	private int month;
-	
-	@Column(nullable = false)
-	private int year;
-	
-	@Column(nullable = false)
-	private Double budgetLimit;
-	
-	@Column(nullable = false)
-	private Double totalExpense = 0.0;
 
-	public Long getId() {
-		return id;
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	public void setId(Long id) {
-		this.id = id;
-	}
-//
-	public User getUser() {
-		return user;
-	}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-	public void setUser(User user) {
-		this.user = user;
-	}
+    @Column(nullable = false)
+    private int month;
 
-	public int getMonth() {
-		return month;
-	}
+    @Column(nullable = false)
+    private int year;
 
-	public void setMonth(int month) {
-		this.month = month;
-	}
+    @Column(nullable = false)
+    private Double budgetLimit;
 
-	public int getYear() {
-		return year;
-	}
+    @Column(nullable = false)
+    @Builder.Default
+    private Double totalExpense = 0.0;
 
-	public void setYear(int year) {
-		this.year = year;
-	}
+    @Column(nullable = false, updatable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-	public Double getBudgetLimit() {
-		return budgetLimit;
-	}
+    @Column(nullable = false)
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
-	public void setBudgetLimit(Double budgetLimit) {
-		this.budgetLimit = budgetLimit;
-	}
-
-	public Double getTotalExpense() {
-		return totalExpense;
-	}
-
-	public void setTotalExpense(Double totalExpense) {
-		this.totalExpense = totalExpense;
-	}
-	
-	
-
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

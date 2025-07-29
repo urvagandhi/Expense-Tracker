@@ -4,109 +4,51 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
-
+import lombok.*;
 
 @Entity
-@Table(name = "expense")
+@Table(name = "expenses", indexes = {
+    @Index(name = "idx_expense_user", columnList = "user_id"),
+    @Index(name = "idx_expense_date", columnList = "expense_date"),
+    @Index(name = "idx_expense_category", columnList = "category")
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Expense {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	
-	@ManyToOne
-	@JoinColumn(name = "user_id" , nullable = false)
-	private User user;
-	
-	
-	@Column(nullable = false)
-	private Double amount;
-	
-	@Column(nullable = false)
-	private String category;
-	
-	@Column(nullable = false)
-	private String description;
-	
-	@Column(nullable = false)
-	private LocalDate expenseDate;
-	
-	
-	@Column(nullable = false)
-	private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	public Long getId() {
-		return id;
-	}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
+    @Column(nullable = false)
+    private Double amount;
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @Column(nullable = false, length = 50)
+    private String category;
 
+    @Column(nullable = false, length = 255)
+    private String description;
 
-	public User getUser() {
-		return user;
-	}
+    @Column(name = "expense_date", nullable = false)
+    private LocalDate expenseDate;
 
+    @Column(nullable = false, updatable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-	public void setUser(User user) {
-		this.user = user;
-	}
+    @Column(nullable = false)
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
-
-	public Double getAmount() {
-		return amount;
-	}
-
-
-	public void setAmount(Double amount) {
-		this.amount = amount;
-	}
-
-
-	public String getCategory() {
-		return category;
-	}
-
-
-	public void setCategory(String category) {
-		this.category = category;
-	}
-
-
-	public String getDescription() {
-		return description;
-	}
-
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-
-	public LocalDate getExpenseDate() {
-		return expenseDate;
-	}
-
-
-	public void setExpenseDate(LocalDate expenseDate) {
-		this.expenseDate = expenseDate;
-	}
-
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-	
-	
-
-	
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

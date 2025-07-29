@@ -2,51 +2,63 @@ package com.tracker.expense_tracker.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
+import com.tracker.expense_tracker.dto.request.UpdateUserRequest;
+import com.tracker.expense_tracker.dto.response.ApiResponse;
+import com.tracker.expense_tracker.dto.response.UserResponse;
 import com.tracker.expense_tracker.entity.User;
 import com.tracker.expense_tracker.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
-@RequestMapping("/api-users")
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@Tag(name = "Users", description = "User management endpoints")
 public class UserController {
 
-	
-	@Autowired
-	private UserService userService;
-	
-	@PostMapping("/register")
-	public String registerUser(@RequestBody User user) {
-		userService.registerUser(user);
-		return "user registered successfully";
-		
-	}
-	
-	@GetMapping("/get-user-data")
-	public List<User> getuserById(@PathVariable  Long id ){
-		return userService.getUser(id);
-	}
-	
-	@PutMapping("/update-user/{id}")
-	public String updateUser(@PathVariable  Long id , @RequestBody User user) {
-		userService.updateUser(id , user);
-		return "user data updated successfully";
-	}
-	
-	@DeleteMapping("/delete-user/{id}")
-	public String deleteUser(@PathVariable Long id) {
-		userService.deleteUser(id);
-		return "user data deleted successfully";
-	
-	}
-	
+    private final UserService userService;
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current authenticated user profile")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@AuthenticationPrincipal User user) {
+        UserResponse response = userService.getUserById(user.getId());
+        return ResponseEntity.ok(ApiResponse.success("User retrieved", response));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID")
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
+        UserResponse response = userService.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.success("User retrieved", response));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all users (admin)")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        List<UserResponse> response = userService.getAllUsers();
+        return ResponseEntity.ok(ApiResponse.success("Users retrieved", response));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update user")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request) {
+        UserResponse response = userService.updateUser(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete user")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
+    }
 }

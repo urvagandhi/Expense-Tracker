@@ -1,105 +1,87 @@
 # Expense Tracker
 
-A Spring Boot REST API backend for personal expense tracking and budget management. Users can register, record expenses (with category, amount, date), and set monthly budgets. The application persists data in MySQL via JPA/Hibernate.
+A production-grade Spring Boot REST API for personal expense tracking and budget management. Features JWT authentication, role-based access control, input validation, pagination, and comprehensive error handling.
 
-## Architecture Overview
+## Tech Stack
 
-- **Type**: Monolithic Spring Boot 3.4.1 web application (Java 17)
-- **Pattern**: Controller -> Service -> Repository (standard Spring layered architecture)
-- **Database**: MySQL 8+ (`expense-tracker-db`), schema auto-managed by Hibernate
-- **Build**: Maven (with Maven Wrapper included)
-- **Key Dependencies**: Spring Web, Spring Data JPA, Spring Validation, Lombok, MySQL Connector
+| Layer | Technology |
+|-------|-----------|
+| Framework | Spring Boot 3.4.1 (Java 17) |
+| Security | Spring Security + JWT (jjwt 0.12.6) |
+| Database | MySQL 8+ / H2 (tests) |
+| ORM | Spring Data JPA / Hibernate |
+| Validation | Bean Validation (Jakarta) |
+| Documentation | SpringDoc OpenAPI (Swagger UI) |
+| Monitoring | Spring Boot Actuator |
+| Build | Maven |
+| Testing | JUnit 5, Mockito, MockMvc |
 
-## Module Structure
+## Architecture
 
-```mermaid
-graph TD
-    ROOT["Expense Tracker (root)"] --> CTRL["controller"]
-    ROOT --> SVC["service"]
-    ROOT --> REPO["repository"]
-    ROOT --> ENT["entity"]
-
-    CTRL --> UC["UserController"]
-    CTRL --> EC["ExpenseController"]
-    CTRL --> BC["BudgetController"]
-
-    SVC --> US["UserService"]
-    SVC --> ES["ExpenseService"]
-    SVC --> BS["BudgetService"]
-
-    REPO --> UR["UserRepository"]
-    REPO --> ER["ExpenseRepository"]
-    REPO --> BR["BudgetRepository"]
-
-    ENT --> UE["User"]
-    ENT --> EE["Expense"]
-    ENT --> BE["Budget"]
+```
+com.tracker.expense_tracker/
+├── config/          # Security, OpenAPI configuration
+├── controller/      # REST controllers (Auth, User, Expense, Budget)
+├── dto/
+│   ├── request/     # Validated request DTOs
+│   └── response/    # Response DTOs with factory methods
+├── entity/          # JPA entities with Lombok
+├── exception/       # Custom exceptions + @ControllerAdvice handler
+├── repository/      # Spring Data JPA repositories
+├── security/        # JWT service, authentication filter
+└── service/         # Business logic layer
 ```
 
-## REST API Endpoints
+## API Endpoints
 
-### User (`/api-users`)
+### Authentication (Public)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api-users/register` | Register a new user |
-| GET | `/api-users/get-user-data` | Get user data |
-| PUT | `/api-users/update-user/{id}` | Update user by ID |
-| DELETE | `/api-users/delete-user/{id}` | Delete user by ID |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login and receive JWT token |
 
-### Expense (`/api/expenses`)
+### Users (Authenticated)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/expenses/add-expense` | Add a new expense |
-| PUT | `/api/expenses/update-expense/{id}` | Update expense by ID |
-| DELETE | `/api/expenses/delete-expense` | Delete expense (ID in request body) |
-| GET | `/api/expenses/expenses/{userId}` | Get all expenses for a user |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/me` | Get current user profile |
+| GET | `/api/users/{id}` | Get user by ID |
+| GET | `/api/users` | Get all users |
+| PUT | `/api/users/{id}` | Update user |
+| DELETE | `/api/users/{id}` | Delete user |
 
-### Budget (`/api/budgets`)
+### Expenses (Authenticated)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/budgets/add-budget` | Add a budget |
-| PUT | `/api/budgets/update-budget/{id}` | Update budget by ID |
-| DELETE | `/api/budgets/delete-budget` | Delete budget (ID in request body) |
-| GET | `/api/budgets/budget-data/{userId}/{month}/{year}` | Get budget for user/month/year |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/expenses` | Add new expense |
+| GET | `/api/expenses` | Get expenses (paginated, sorted) |
+| GET | `/api/expenses/all` | Get all expenses |
+| PUT | `/api/expenses/{id}` | Update expense |
+| DELETE | `/api/expenses/{id}` | Delete expense |
 
-## Data Model
+### Budgets (Authenticated)
 
-### User (table: `users`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/budgets` | Create monthly budget |
+| GET | `/api/budgets` | Get all budgets |
+| GET | `/api/budgets/{month}/{year}` | Get budget for month/year |
+| PUT | `/api/budgets/{id}` | Update budget |
+| DELETE | `/api/budgets/{id}` | Delete budget |
 
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | Long | PK, auto-generated |
-| username | String | NOT NULL |
-| email | String | NOT NULL |
-| password | String | NOT NULL |
-| role | String | NOT NULL, default "USER" |
-| expense | List\<Expense\> | OneToMany, cascade ALL |
+## Key Features
 
-### Expense (table: `expense`)
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | Long | PK, auto-generated |
-| user | User | ManyToOne, FK `user_id`, NOT NULL |
-| amount | Double | NOT NULL |
-| category | String | NOT NULL |
-| description | String | NOT NULL |
-| expenseDate | LocalDate | NOT NULL |
-| createdAt | LocalDateTime | NOT NULL, default `now()` |
-
-### Budget (table: `budget`)
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | Long | PK, auto-generated |
-| user | User | ManyToOne, FK `user_id`, NOT NULL |
-| month | int | NOT NULL |
-| year | int | NOT NULL |
-| budgetLimit | Double | NOT NULL |
-| totalExpense | Double | NOT NULL, default 0.0 |
+- **JWT Authentication** — Stateless token-based auth with BCrypt password hashing
+- **Request Validation** — `@Valid` on all endpoints with structured error responses
+- **DTO Pattern** — Clean separation between API layer and persistence layer
+- **Global Exception Handling** — `@ControllerAdvice` with consistent `ApiResponse<T>` envelope
+- **Pagination & Sorting** — Pageable support on list endpoints
+- **Auto Budget Sync** — Adding/updating/deleting expenses auto-recalculates budget totals
+- **Resource Ownership** — Users can only access their own expenses and budgets
+- **Swagger UI** — Interactive API docs at `/swagger-ui.html`
+- **Actuator** — Health and metrics at `/actuator/health`
 
 ## Getting Started
 
@@ -112,36 +94,72 @@ graph TD
 ### Build and Run
 
 ```bash
-# Using Maven Wrapper
-./mvnw spring-boot:run
+# Build
+mvn clean package
 
-# Or build JAR
-./mvnw clean package
+# Run
 java -jar target/expense-tracker-0.0.1-SNAPSHOT.jar
+
+# Or run directly
+mvn spring-boot:run
 ```
 
 ### Configuration
 
-Database connection is configured in `src/main/resources/application.properties`. Update the credentials to match your local MySQL setup:
+Update `src/main/resources/application.properties` with your database credentials:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/expense-tracker-db
 spring.datasource.username=root
 spring.datasource.password=<your-password>
+jwt.secret=<your-base64-secret>
 ```
 
 ### Run Tests
 
 ```bash
-./mvnw test
+mvn test
 ```
 
-## Future Scope
+Tests use H2 in-memory database — no MySQL required.
 
-- Authentication and authorization (Spring Security)
-- Input validation with Bean Validation annotations
-- DTO layer to decouple API from JPA entities
-- Global exception handling with `@ControllerAdvice`
-- Generate financial reports and analytics
-- Build a web or mobile frontend for better usability
-- Unit and integration tests
+### API Documentation
+
+Start the application and visit:
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+## Sample Requests
+
+### Register
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"John","email":"john@example.com","password":"password123"}'
+```
+
+### Login
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password123"}'
+```
+
+### Add Expense (with JWT)
+```bash
+curl -X POST http://localhost:8080/api/expenses \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":45.50,"category":"Food","description":"Lunch","expenseDate":"2025-12-15"}'
+```
+
+## Test Coverage
+
+| Test Class | Tests | Type |
+|------------|-------|------|
+| AuthServiceTest | 2 | Unit |
+| ExpenseServiceTest | 5 | Unit |
+| BudgetServiceTest | 4 | Unit |
+| AuthControllerTest | 3 | Integration |
+| ExpenseTrackerApplicationTests | 1 | Smoke |
+| **Total** | **15** | |

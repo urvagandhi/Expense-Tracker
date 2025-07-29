@@ -1,49 +1,75 @@
 package com.tracker.expense_tracker.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
-import com.tracker.expense_tracker.entity.Budget;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import com.tracker.expense_tracker.dto.request.BudgetRequest;
+import com.tracker.expense_tracker.dto.response.ApiResponse;
+import com.tracker.expense_tracker.dto.response.BudgetResponse;
+import com.tracker.expense_tracker.entity.User;
 import com.tracker.expense_tracker.service.BudgetService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/budgets")
-
+@RequiredArgsConstructor
+@Tag(name = "Budgets", description = "Budget management endpoints")
 public class BudgetController {
 
-	
-	@Autowired
-	private BudgetService budgetService;
-	
-	@PostMapping("/add-budget")
-	public String addBudget(@RequestBody Budget budget) {
-		budgetService.addBudget(budget);
-		return "budget data added successsfully";
-	}
-	
-	@PutMapping("/update-budget/{id}")
-	public String  updateBudget(@PathVariable Long id,@RequestBody Budget budget) {
-		budgetService.updateBudget(id,budget);
-		return "budget update successfully";
-	}
-	
-	@DeleteMapping("/delete-budget")
-	public String deleteBudget(@RequestBody Budget budget) {
-		budgetService.deleteBudget(budget.getId());
-		return "budget data deleted successfully";
-	}
-	
-	@GetMapping("/budget-data/{userId}/{month}/{year}")
-	public Budget getBudget(@PathVariable Long userId ,@PathVariable int month , @PathVariable int year) {
-		return budgetService.getBudget(userId , month , year);
-	}
+    private final BudgetService budgetService;
 
+    @PostMapping
+    @Operation(summary = "Create a budget for a month")
+    public ResponseEntity<ApiResponse<BudgetResponse>> addBudget(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody BudgetRequest request) {
+        BudgetResponse response = budgetService.addBudget(user, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Budget created successfully", response));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update a budget")
+    public ResponseEntity<ApiResponse<BudgetResponse>> updateBudget(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody BudgetRequest request) {
+        BudgetResponse response = budgetService.updateBudget(id, user, request);
+        return ResponseEntity.ok(ApiResponse.success("Budget updated successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a budget")
+    public ResponseEntity<ApiResponse<Void>> deleteBudget(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        budgetService.deleteBudget(id, user);
+        return ResponseEntity.ok(ApiResponse.success("Budget deleted successfully"));
+    }
+
+    @GetMapping("/{month}/{year}")
+    @Operation(summary = "Get budget for a specific month/year")
+    public ResponseEntity<ApiResponse<BudgetResponse>> getBudget(
+            @AuthenticationPrincipal User user,
+            @PathVariable int month,
+            @PathVariable int year) {
+        BudgetResponse response = budgetService.getBudget(user, month, year);
+        return ResponseEntity.ok(ApiResponse.success("Budget retrieved", response));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all budgets for current user")
+    public ResponseEntity<ApiResponse<List<BudgetResponse>>> getAllBudgets(
+            @AuthenticationPrincipal User user) {
+        List<BudgetResponse> response = budgetService.getAllBudgets(user);
+        return ResponseEntity.ok(ApiResponse.success("Budgets retrieved", response));
+    }
 }

@@ -2,54 +2,77 @@ package com.tracker.expense_tracker.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
-import com.tracker.expense_tracker.entity.Expense;
-import com.tracker.expense_tracker.repository.ExpenseRepository;
+import com.tracker.expense_tracker.dto.request.ExpenseRequest;
+import com.tracker.expense_tracker.dto.response.ApiResponse;
+import com.tracker.expense_tracker.dto.response.ExpenseResponse;
+import com.tracker.expense_tracker.entity.User;
 import com.tracker.expense_tracker.service.ExpenseService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/expenses")
+@RequiredArgsConstructor
+@Tag(name = "Expenses", description = "Expense management endpoints")
 public class ExpenseController {
-	
-	@Autowired
-	private ExpenseService expenseService;
-	
-	@PostMapping("/add-expense")
-	public String  addExpense(@RequestBody Expense expense) {
-		 expenseService.addExpense(expense);
-		 return "expense added successfully";
-		
-	}
-	
-	@PutMapping("/update-expense/{id}")
-	public String  updateExpense(@PathVariable Long id,@RequestBody Expense expense) {
-		expenseService.updateExpense(id , expense);
-		return "expense data update successfully";
-		
-	}
-	
-	@DeleteMapping("/delete-expense")
-	public String deleteExpense(@RequestBody Expense expense) {
-		expenseService.deleteExpense(expense.getId());
-		return "expense data deleted succesfully";
-		
-	}
-	
-	
-	
-	@GetMapping("/expenses/{userId}")
-	public List<Expense> getExpenseByUserId(@PathVariable Long userId){
-		return expenseService.getExpenseByUserId(userId);
-	}
-	
 
+    private final ExpenseService expenseService;
+
+    @PostMapping
+    @Operation(summary = "Add a new expense")
+    public ResponseEntity<ApiResponse<ExpenseResponse>> addExpense(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ExpenseRequest request) {
+        ExpenseResponse response = expenseService.addExpense(user, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Expense added successfully", response));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update an expense")
+    public ResponseEntity<ApiResponse<ExpenseResponse>> updateExpense(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ExpenseRequest request) {
+        ExpenseResponse response = expenseService.updateExpense(id, user, request);
+        return ResponseEntity.ok(ApiResponse.success("Expense updated successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an expense")
+    public ResponseEntity<ApiResponse<Void>> deleteExpense(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        expenseService.deleteExpense(id, user);
+        return ResponseEntity.ok(ApiResponse.success("Expense deleted successfully"));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all expenses for current user (paginated)")
+    public ResponseEntity<ApiResponse<Page<ExpenseResponse>>> getExpenses(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 20, sort = "expenseDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ExpenseResponse> response = expenseService.getExpensesByUser(user, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Expenses retrieved", response));
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Get all expenses for current user (no pagination)")
+    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getAllExpenses(
+            @AuthenticationPrincipal User user) {
+        List<ExpenseResponse> response = expenseService.getAllExpensesByUser(user);
+        return ResponseEntity.ok(ApiResponse.success("Expenses retrieved", response));
+    }
 }
