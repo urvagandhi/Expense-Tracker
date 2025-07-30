@@ -1,5 +1,6 @@
 # Build output
 target/
+backend/target/
 
 # IDE
 .idea/
