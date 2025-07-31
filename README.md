@@ -10,6 +10,7 @@ A full-stack personal finance management application built with **Spring Boot 3.
 
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
@@ -19,6 +20,53 @@ A full-stack personal finance management application built with **Spring Boot 3.
 - [Testing Strategy](#testing-strategy)
 - [Database Schema](#database-schema)
 - [Demo Credentials](#demo-credentials)
+
+---
+
+## Screenshots
+
+### Landing Page
+> Clean hero section with gradient accents, Unsplash imagery, and feature highlights.
+
+<p align="center">
+  <img src="docs/screenshots/landing.png" alt="Landing Page" width="100%" />
+</p>
+
+### Authentication
+> Split-panel layout with immersive visuals. Client-side validation with real-time feedback.
+
+<p align="center">
+  <img src="docs/screenshots/login.png" alt="Login" width="49%" />
+  <img src="docs/screenshots/signup.png" alt="Register" width="49%" />
+</p>
+
+### Dashboard
+> At-a-glance financial overview with stat cards, monthly spending bar chart, category breakdown pie chart, and recent transactions.
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
+</p>
+
+### Expenses
+> Full CRUD with inline search, category filtering, and hover-reveal edit/delete actions. Modal forms with validation.
+
+<p align="center">
+  <img src="docs/screenshots/expenses.png" alt="Expenses" width="100%" />
+</p>
+
+### Budgets
+> Monthly budget cards with color-coded progress bars (green under 70%, orange 70-90%, red over 90%). Real-time remaining balance.
+
+<p align="center">
+  <img src="docs/screenshots/budgets.png" alt="Budgets" width="100%" />
+</p>
+
+### Profile
+> View and update account information. Avatar with user initials, role badge, and password change support.
+
+<p align="center">
+  <img src="docs/screenshots/profile.png" alt="Profile" width="100%" />
+</p>
 
 ---
 
